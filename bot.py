@@ -96,6 +96,20 @@ async def addSlots(ctx, mission: int):
     conn.commit()
     conn.close()
 
+@bot.command(name = "addSlotsT", help = "Adding the slots for the given mission based on the argument")
+async def addSlotsT(ctx, mission: int, slots: str):
+    """
+    Creating a .txt file inside the bot folder to prepare addSlots command with a discord command.
+    Without the need to have access to the discord bot folder.
+    """
+    file = open(os.getcwd() + "/slots.txt", "w+")
+    fileLines = slots.split("\n")
+    del fileLines[-1]
+
+    for i in fileLines:
+        file.write(i + "\n")
+    file.close()
+
 def mission_convert(mission_id):
     """
     Returning the mission_name for a mission_id.
