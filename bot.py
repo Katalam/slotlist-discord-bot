@@ -157,9 +157,9 @@ async def missions(ctx):
 
 @bot.command(name = "missioninfo", help = "List all available mission related informations")
 async def missioninfo(ctx, mission: int):
-    await missioninfofnc(ctx, mission)
+    await missioninfofnc(ctx, mission, False)
 
-async def missioninfofnc(ctx, mission: int):
+async def missioninfofnc(ctx, mission: int, edit):
     """
     Will list all available mission related informations.
     Returning with answering the client command.
@@ -187,8 +187,11 @@ async def missioninfofnc(ctx, mission: int):
             group = group_name
         send_message = send_message + "{}: {}{}\n".format(i, data[0][j].split(",")[1], get_name(data, j + 1))
         j = j + 2
-    await ctx.send(send_message)
-
+    if edit:
+        m = await ctx.history().get(author__name="Slotlist")
+        await m.edit(content = send_message)
+    else:
+        await ctx.send(send_message)
 
     conn.commit()
     conn.close()
@@ -233,6 +236,7 @@ async def slot(ctx, mission: int, slot: int):
 
     conn.commit()
     conn.close()
+    await addmissionchannel(ctx, mission)
 
 def already_slotted(name, mission):
     """
@@ -279,6 +283,7 @@ async def rslot(ctx, mission: int):
                 await ctx.send(send_message)
     conn.commit()
     conn.close()
+    await addmissionchannel(ctx, mission)
 
 @bot.command(name = "aslot", help = "Assign player for a mission")
 async def aslot(ctx, player, mission: int, slot: int):
@@ -313,6 +318,7 @@ async def aslot(ctx, player, mission: int, slot: int):
 
     conn.commit()
     conn.close()
+    await addmissionchannel(ctx, mission)
 
 async def find_target(ctx, arg):
 		"""
@@ -326,27 +332,6 @@ async def find_target(ctx, arg):
 async def addmissionchannel(ctx, mission):
     """
     Adds a channel after !addSlots
-    """
-    # works
-    # server = ctx.message.guild
-    # await server.create_text_channel("text-channel")
-    # works
-    # server = ctx.message.guild
-    # await server.create_category("test-category")
-
-    # works not
-    # send_message = "{} Slot is already taken. I'm sorry".format(ctx.author.mention)
-    # await ctx.send(send_message)
-
-    """
-    What it is needed to do:
-        - Checks if category is there | Done
-            - If not create it | Done
-        - Checks if channel is there | Done
-            - If not create it | Done
-        - Delete messages in channel
-            - If no message inside send mission info
-        - Send a new (updated) message
     """
     category = False
     channels = []
@@ -374,13 +359,15 @@ async def addmissionchannel(ctx, mission):
     else:
         need = True
         for x in channels:
-            if str(x) == "{}-{}".format(1, "mymission"):
+            if str(x) == "{}-{}".format(mission, name):
                 chan = x
                 need = False
+                break
         if need:
             server = ctx.message.guild
             chan = await server.create_text_channel("{}-{}".format(mission, name), category = cat)
-
-    await missioninfofnc(chan, mission)
-
+            await missioninfofnc(chan, mission, False)
+            return
+    await missioninfofnc(chan, mission, True)
+    
 bot.run(token)
