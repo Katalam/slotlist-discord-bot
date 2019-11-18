@@ -230,4 +230,33 @@ def already_slotted(name, mission):
             return True
     return False
 
+@bot.command(name = "rslot", help = "Remove your assignment for a mission")
+async def rslot(ctx, mission: int):
+    """
+    Connects to the database and checks all slots for the slotted player.
+    And remove it.
+    Returning with answering the client command.
+    """
+    conn = sqlite3.connect("slotlist.db")
+    cursor = conn.cursor()
+
+    if not already_slotted(ctx.author, mission):
+        conn.commit()
+        conn.close()
+        send_message = "{} You are not slotted".format(ctx.author.mention)
+        await ctx.send(send_message)
+        return
+    else:
+        sql = 'SELECT * FROM "{}"'.format(mission)
+        cursor.execute(sql)
+        data = cursor.fetchall()
+        for x in range(1, data[0][0] + 1):
+            if data[0][x * 2] == str(ctx.author):
+                sql = 'UPDATE "{}" SET s{} = NULL'.format(mission, x)
+                cursor.execute(sql)
+                send_message = "{} You removed your assignment".format(ctx.author.mention)
+                await ctx.send(send_message)
+    conn.commit()
+    conn.close()
+
 bot.run(token)
