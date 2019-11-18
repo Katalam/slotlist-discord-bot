@@ -41,6 +41,10 @@ Also you need to have pyperclip installed
 ```
 $ pip install pyperclip
 ```
+Then you will need dotenv
+```
+$ pip install -U python-dotenv
+```
 
 Now you need to set-up your database.
 We will create a database with:

@@ -32,7 +32,7 @@ def file_write(element):
     Opens the slot.txt (create one if not found) and add a new line with first
     group then slots, seperated with a comma.
     """
-    file = open(os.getcwd() + "/slots.txt", "w+")
+    file = open(os.path.join(os.getcwd(), "slots.txt"), "a+")
     file.write("{},{}\n".format(element[0], element[1]))
 
     file.close()
@@ -91,5 +91,6 @@ if __name__ == "__main__":
     error_label.grid(row = 3, column = 1)
 
     c = 4
+    f = os.remove(os.path.join(os.getcwd(), "slots.txt"))
 
     window.mainloop()
