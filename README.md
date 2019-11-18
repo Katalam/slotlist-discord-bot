@@ -37,6 +37,10 @@ and one windows the following would be used.
 ```
 > py -3 -m pip install -U discord.py
 ```
+Also you need to have pyperclip installed
+```
+$ pip install pyperclip
+```
 
 Now you need to set-up your database.
 We will create a database with:
