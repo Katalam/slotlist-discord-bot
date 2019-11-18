@@ -95,6 +95,7 @@ async def addSlots(ctx, mission: int):
 
     conn.commit()
     conn.close()
+    await addmissionchannel(ctx, mission)
 
 @bot.command(name = "addSlotsT", help = "Adding the slots for the given mission based on the argument")
 async def addSlotsT(ctx, mission: int, slots: str):
@@ -155,6 +156,9 @@ async def missions(ctx):
 
 @bot.command(name = "missioninfo", help = "List all available mission related informations")
 async def missioninfo(ctx, mission: int):
+    await missioninfofnc(ctx, mission)
+
+async def missioninfofnc(ctx, mission: int):
     """
     Will list all available mission related informations.
     Returning with answering the client command.
@@ -300,7 +304,7 @@ async def aslot(ctx, player, mission: int, slot: int):
             sql = 'UPDATE "{}" SET s{} = "{}"'.format(mission, slot, player)
             cursor.execute(sql)
 
-            send_message = "{} have been slotted for #{} at >{}<".format(player.mention, slot, mission_convert(mission))
+            send_message = "{} assigned {} for #{} at >{}<".format(ctx.author.mention, player.mention, slot, mission_convert(mission))
             await ctx.send(send_message)
         else:
             send_message = "{} Slot is already taken. I'm sorry".format(ctx.author.mention)
@@ -317,5 +321,65 @@ async def find_target(ctx, arg):
 			return discord.Object(id=0)
 
 		return await MemberConverter().convert(ctx, arg)
+
+async def addmissionchannel(ctx, mission):
+    """
+    Adds a channel after !addSlots
+    """
+    # works
+    # server = ctx.message.guild
+    # await server.create_text_channel("text-channel")
+    # works
+    # server = ctx.message.guild
+    # await server.create_category("test-category")
+
+    # works not
+    # send_message = "{} Slot is already taken. I'm sorry".format(ctx.author.mention)
+    # await ctx.send(send_message)
+
+    """
+    What it is needed to do:
+        - Checks if category is there | Done
+            - If not create it | Done
+        - Checks if channel is there | Done
+            - If not create it | Done
+        - Delete messages in channel
+            - If no message inside send mission info
+        - Send a new (updated) message
+    """
+    category = False
+    channels = []
+    chan = None
+    cat = None
+    name = mission_convert(mission)
+
+    # is category available
+    for x in ctx.guild.categories:
+        if "missions" in str(x):
+            category = True
+            cat = x
+            channels = x.text_channels
+            break
+
+    if not category:
+        # create category
+        server = ctx.message.guild
+        cat = await server.create_category("missions")
+
+    # is channel available
+    if channels == []:
+        server = ctx.message.guild
+        chan = await server.create_text_channel("{}-{}".format(mission, name), category = cat)
+    else:
+        need = True
+        for x in channels:
+            if str(x) == "{}-{}".format(1, "mymission"):
+                chan = x
+                need = False
+        if need:
+            server = ctx.message.guild
+            chan = await server.create_text_channel("{}-{}".format(mission, name), category = cat)
+
+    await missioninfofnc(chan, mission)
 
 bot.run(token)
