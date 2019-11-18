@@ -1,0 +1,11 @@
+Warrior 1,Platoon Leader
+Warrior 1,Platoon Sergeant
+Warrior 1-1,Squad Leader
+Warrior 1-1,Fire Team Leader
+Warrior 1-1,Autorifleman
+Warrior 1-1,Grenadier
+Warrior 1-1,Rifleman
+Warrior 1-1,Fire Team Leader
+Warrior 1-1,Autorifleman
+Warrior 1-1,Grenadier
+Warrior 1-1,Rifleman
