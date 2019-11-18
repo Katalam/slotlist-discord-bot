@@ -302,11 +302,6 @@ async def find_target(ctx, arg):
 		if arg in ('everyone', 'all'):
 			return discord.Object(id=0)
 
-		try:
-			return await MemberConverter().convert(ctx, arg)
-		except BadArgument:
-			pass
-
-		return arg
+		return await MemberConverter().convert(ctx, arg)
 
 bot.run(token)
