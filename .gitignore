@@ -1,3 +1,4 @@
 .env
 sql_test.py
 .DS_Store
+slotlist.db
