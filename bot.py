@@ -1,11 +1,12 @@
 # bot.py
-import os
-import random
-import sqlite3
-import discord
+import os, sqlite3, discord, sys
 from dotenv import load_dotenv
 from discord.ext import commands
 from discord.ext.commands import MemberConverter
+
+if sys.version_info[0] == 2:
+    print("Python 3 is required.")
+    sys.exit(1)
 
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
