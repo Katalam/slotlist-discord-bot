@@ -52,9 +52,9 @@ Now exit the database environment:
 sqlite3> .quit
 ```
 
-You can use the [init_database.py](init_database.py) script for doing that job for you.
+You can use the [init-database.py](init-database.py) script for doing that job for you.
 ```
-$ python3 init_database.py
+$ python3 init-database.py
 ```
 
 <!--
