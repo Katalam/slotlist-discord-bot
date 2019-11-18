@@ -4,6 +4,7 @@ import random
 import sqlite3
 from dotenv import load_dotenv
 from discord.ext import commands
+from discord.ext.commands import MemberConverter
 
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
@@ -201,7 +202,7 @@ async def slot(ctx, mission: int, slot: int):
     slotdb = data[0][0]
 
     if slotdb == None:
-        sql = 'UPDATE "{}" SET s{} = "{}"'.format(mission, slot, ctx.author, slot)
+        sql = 'UPDATE "{}" SET s{} = "{}"'.format(mission, slot, ctx.author)
         cursor.execute(sql)
 
         send_message = "{} You have been slotted for #{} at >{}<".format(ctx.author.mention, slot, mission_convert(mission))
@@ -258,5 +259,53 @@ async def rslot(ctx, mission: int):
                 await ctx.send(send_message)
     conn.commit()
     conn.close()
+
+@bot.command(name = "aslot", help = "Assign player for a mission")
+async def aslot(ctx, player, mission: int, slot: int):
+    """
+    Connects to the database and slot a player for a mission if available
+    """
+    conn = sqlite3.connect("slotlist.db")
+    cursor = conn.cursor()
+
+    if already_slotted(player, mission):
+        conn.commit()
+        conn.close()
+        send_message = "{} Is already slotted".format(ctx.author.mention)
+        await ctx.send(send_message)
+        return
+    else:
+        sql = 'SELECT s{} FROM "{}"'.format(slot, mission)
+        cursor.execute(sql)
+        data = cursor.fetchall()
+        slotdb = data[0][0]
+
+        if slotdb == None:
+            player = await find_target(ctx, str(player))
+            sql = 'UPDATE "{}" SET s{} = "{}"'.format(mission, slot, player)
+            cursor.execute(sql)
+
+            send_message = "{} have been slotted for #{} at >{}<".format(player.mention, slot, mission_convert(mission))
+            await ctx.send(send_message)
+        else:
+            send_message = "{} Slot is already taken. I'm sorry".format(ctx.author.mention)
+            await ctx.send(send_message)
+
+    conn.commit()
+    conn.close()
+
+async def find_target(ctx, arg):
+		"""
+        Returns the player id.
+        """
+		if arg in ('everyone', 'all'):
+			return discord.Object(id=0)
+
+		try:
+			return await MemberConverter().convert(ctx, arg)
+		except BadArgument:
+			pass
+
+		return arg
 
 bot.run(token)
