@@ -266,7 +266,7 @@ def already_slotted(name, mission):
     conn.commit()
     conn.close()
     for x in range(1, data[0][0] + 1):
-        if data[0][x * 2] == str(name):
+        if data[0][(x * 2) + 1] == str(name):
             return True
     return False
 
@@ -291,7 +291,7 @@ async def rslot(ctx, mission: int):
         cursor.execute(sql)
         data = cursor.fetchall()
         for x in range(1, data[0][0] + 1):
-            if data[0][x * 2] == str(ctx.author):
+            if data[0][(x * 2) + 1] == str(ctx.author):
                 sql = 'UPDATE "{}" SET s{} = NULL'.format(mission, x)
                 cursor.execute(sql)
                 send_message = "{} You removed your assignment".format(ctx.author.mention)
