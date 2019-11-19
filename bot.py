@@ -139,7 +139,6 @@ async def addSlotsT(ctx, slots: str):
         file.write(i + "\n")
     file.close()
 
-# Getting the mission name from its ID
 def mission_convert(mission_id):
     """
     Returning the mission_name for a mission_id.
