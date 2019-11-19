@@ -125,8 +125,8 @@ async def addSlots(ctx, mission: int):
 # last character have to be a '\n' (a linebreak or slots have to be ended with a empty line)
 # lines are groupname a comma and without a space the slotname eneded with a line break
 # example> My Group 1-1,My Slot 1
-@bot.command(name = "addSlotsT", help = "Adding the slots for the given mission based on the argument")
-async def addSlotsT(ctx, mission: int, slots: str):
+@bot.command(name = "addSlotsT", help = "Adding the slots as .txt file inside the bot folder")
+async def addSlotsT(ctx, slots: str):
     """
     Creating a .txt file inside the bot folder to prepare addSlots command with a discord command.
     Without the need to have access to the discord bot folder.
