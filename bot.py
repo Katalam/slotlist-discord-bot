@@ -362,6 +362,8 @@ async def addmissionchannel(ctx, mission):
     if channels == []:
         server = ctx.message.guild
         chan = await server.create_text_channel("{}-{}".format(mission, name), category = cat)
+        await missioninfofnc(chan, mission, False)
+        return
     else:
         need = True
         for x in channels:
@@ -374,7 +376,7 @@ async def addmissionchannel(ctx, mission):
             chan = await server.create_text_channel("{}-{}".format(mission, name), category = cat)
             await missioninfofnc(chan, mission, False)
             return
-    await missioninfofnc(chan, mission, True)
+        await missioninfofnc(chan, mission, True)
 
 def name_convert(name):
     return name.replace(" ", "-").lower()
