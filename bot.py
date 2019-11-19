@@ -1,5 +1,5 @@
 # bot.py
-import os, sqlite3, discord, sys
+import os, sqlite3, discord, sys, datetime
 from dotenv import load_dotenv
 from discord.ext import commands
 from discord.ext.commands import MemberConverter
@@ -19,7 +19,7 @@ async def on_ready():
     print(f"{bot.user.name} has connected to Discord!")
 
 @bot.command(name = "addMission", help = "Adds a new mission with given name. Use quotations for multi-word names")
-async def addMission(ctx, mission: str):
+async def addMission(ctx, mission: str, date: str, time: str):
     """
     Adds a new entry inside the missions table.
     Adds a new table named mission_id.
@@ -36,6 +36,7 @@ async def addMission(ctx, mission: str):
 
     # Adding the new entry inside the missions table with given name and highest + 1 mission_id
     mission_id = highest_mission_id() + 1
+    date = date + " " + time
     sql = "INSERT INTO missions (mission_id, mission_name) VALUES (?, ?)"
     cursor.execute(sql, [(mission_id), (mission)])
 
@@ -44,13 +45,13 @@ async def addMission(ctx, mission: str):
     await ctx.send(send_message)
 
     # Creating a new table named with the unique mission_id
-    sql = 'CREATE TABLE "{}" (id INTEGER NOT NULL PRIMARY KEY)'.format(mission_id)
+    sql = 'CREATE TABLE "{}" (id INTEGER NOT NULL PRIMARY KEY, mission_date TEXT)'.format(mission_id)
+    cursor.execute(sql)
+    sql = 'INSERT INTO "{}" (mission_date) VALUES ("{}")'.format(mission_id, date)
     cursor.execute(sql)
 
     conn.commit()
     conn.close()
-
-    return
 
 def highest_mission_id():
     """
@@ -85,7 +86,7 @@ async def addSlots(ctx, mission: int):
     cursor = conn.cursor()
     slot_id = 1
 
-    sql = 'INSERT INTO "{}" (id) VALUES ({})'.format(mission, len(fileLines))
+    sql = 'UPDATE "{}" SET id = "{}"'.format(mission, len(fileLines))
     cursor.execute(sql)
 
     for x in fileLines:
@@ -153,7 +154,10 @@ async def missions(ctx):
 
     send_message = ""
     for x in range(0, len(data)):
-        send_message = send_message + "{}: {}\n".format(data[x][0], data[x][1])
+        sql = 'SELECT mission_date FROM "{}"'.format(data[x][0])
+        cursor.execute(sql)
+        date = cursor.fetchall()[0][0]
+        send_message = send_message + "{}: {} - {}\n".format(data[x][0], data[x][1], date)
 
     await ctx.send(send_message)
 
@@ -178,14 +182,19 @@ async def missioninfofnc(ctx, mission: int, edit):
     data = cursor.fetchall()
     nslots = data[0][0]
 
+    sql = 'SELECT mission_date FROM "{}"'.format(mission)
+    cursor.execute(sql)
+    data = cursor.fetchall()
+    time = data[0][0]
+
     sql = 'SELECT * FROM "{}"'.format(mission)
     cursor.execute(sql)
     data = cursor.fetchall()
 
-    send_message = "{}: {}\n".format(mission, mission_convert(mission))
+    send_message = "{}: {}\n{}\n".format(mission, mission_convert(mission), time)
 
     group = ""
-    j = 1
+    j = 2
     for i in range(1, nslots + 1):
         group_name = data[0][j].split(",")[0]
         if group != group_name:
@@ -194,7 +203,7 @@ async def missioninfofnc(ctx, mission: int, edit):
         send_message = send_message + "{}: {}{}\n".format(i, data[0][j].split(",")[1], get_name(data, j + 1))
         j = j + 2
     if edit:
-        m = await ctx.history().get(author__name="Slotlist")
+        m = await ctx.history().get(author__name = "Slotlist")
         await m.edit(content = send_message)
     else:
         await ctx.send(send_message)
