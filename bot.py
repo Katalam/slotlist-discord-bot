@@ -4,16 +4,19 @@ from dotenv import load_dotenv
 from discord.ext import commands
 from discord.ext.commands import MemberConverter
 
+# python 3 is needed to run this bot
 if sys.version_info[0] == 2:
     print("Python 3 is required.")
     sys.exit(1)
 
+# is a .env file inside the folder to leave the token for the bot outside the git
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
 
-# 2
+# bot commands have prefix ! so all messages start with ! will trigger the bot commands
 bot = commands.Bot(command_prefix='!')
 
+# when the bot is initialized it will print a has connected to the terminal
 @bot.event
 async def on_ready():
     print(f"{bot.user.name} has connected to Discord!")
@@ -25,10 +28,13 @@ async def addMission(ctx, mission: str, date: str, time: str):
     Adds a new table named mission_id.
     Returning the mission_id with answering the client command.
     """
+    # database connection
     conn = sqlite3.connect("slotlist.db")
     cursor = conn.cursor()
 
+    # name must be compatible with discord channel name restrictions
     c = name_convert(mission)
+    # if not tell the user how is the converted version
     if (mission != c):
         send_message = "{} Your mission will be renamed from >{}< to >{}<".format(ctx.author.mention, mission, c)
         await ctx.send(send_message)
@@ -40,7 +46,7 @@ async def addMission(ctx, mission: str, date: str, time: str):
     sql = "INSERT INTO missions (mission_id, mission_name) VALUES (?, ?)"
     cursor.execute(sql, [(mission_id), (mission)])
 
-    # Sending a message to the client
+    # Sending a message to the client with creation information
     send_message = "{} Your mission ID for >{}< is: {}".format(ctx.author.mention, mission, mission_id)
     await ctx.send(send_message)
 
@@ -50,6 +56,7 @@ async def addMission(ctx, mission: str, date: str, time: str):
     sql = 'INSERT INTO "{}" (mission_date) VALUES ("{}")'.format(mission_id, date)
     cursor.execute(sql)
 
+    # close connection to database
     conn.commit()
     conn.close()
 
@@ -60,6 +67,7 @@ def highest_mission_id():
     conn = sqlite3.connect("slotlist.db")
     cursor = conn.cursor()
 
+    # highest number of all mission_id will always be the highest not the next available
     sql = "SELECT MAX(mission_id) FROM missions"
     cursor.execute(sql)
     data = cursor.fetchall()
@@ -79,6 +87,7 @@ async def addSlots(ctx, mission: int):
     Adding a new numerated column with linevalue for each line inside the slots.txt.
     Returning the added slots with answering the client command.
     """
+    # gets the slots from a file names slots.txt inside the bot folder
     file = open(os.getcwd() + "/slots.txt", "r")
     fileLines = file.readlines()
 
@@ -89,6 +98,7 @@ async def addSlots(ctx, mission: int):
     sql = 'UPDATE "{}" SET id = "{}"'.format(mission, len(fileLines))
     cursor.execute(sql)
 
+    # every slot gehts two columns name of the slot and name of the player, with player be null at creating
     for x in fileLines:
         sql = 'ALTER TABLE "{}" ADD COLUMN s{}n text'.format(mission, slot_id)
         cursor.execute(sql)
@@ -98,13 +108,23 @@ async def addSlots(ctx, mission: int):
         cursor.execute(sql)
         slot_id = slot_id + 1
 
+    # inform the dicord author for his successfully command
     send_message = "{} You successfully added {} slots for >{}<".format(ctx.author.mention, len(fileLines), mission_convert(mission))
     await ctx.send(send_message)
 
     conn.commit()
     conn.close()
+    # add a channel to the missions category in discord
     await addmissionchannel(ctx, mission)
 
+# if remote connection is not available for the discord membr who adds a mission, he can also create a slots.txt with this command
+# argument have to be the output of the slotlist-editor.py or selfwriten with same data type
+# data type of slots will be:
+# each line is one slot starting with the first and ending with the last slot
+# no empty lines inside the slotlist
+# last character have to be a '\n' (a linebreak or slots have to be ended with a empty line)
+# lines are groupname a comma and without a space the slotname eneded with a line break
+# example> My Group 1-1,My Slot 1
 @bot.command(name = "addSlotsT", help = "Adding the slots for the given mission based on the argument")
 async def addSlotsT(ctx, mission: int, slots: str):
     """
@@ -119,6 +139,7 @@ async def addSlotsT(ctx, mission: int, slots: str):
         file.write(i + "\n")
     file.close()
 
+# Getting the mission name from its ID
 def mission_convert(mission_id):
     """
     Returning the mission_name for a mission_id.
@@ -165,6 +186,7 @@ async def missions(ctx):
     conn.commit()
     conn.close()
 
+#  bot commands can't be called from outside so the command just point to the actual function
 @bot.command(name = "missioninfo", help = "List all available mission related informations")
 async def missioninfo(ctx, mission: int):
     await missioninfofnc(ctx, mission, False)
@@ -194,15 +216,15 @@ async def missioninfofnc(ctx, mission: int, edit):
     send_message = "{}: {}\n{}\n".format(mission, mission_convert(mission), time)
 
     group = ""
-    j = 2
-    for i in range(1, nslots + 1):
+    j = 2 # j is the pointer to the slotname position starting with the third element in mission_id table
+    for i in range(1, nslots + 1): # slots have to be counted for slot command
         group_name = data[0][j].split(",")[0]
-        if group != group_name:
+        if group != group_name: # send a new title if a new group starts
             send_message = send_message + "\n**{}**:\n".format(group_name)
             group = group_name
         send_message = send_message + "{}: {}{}\n".format(i, data[0][j].split(",")[1], get_name(data, j + 1))
-        j = j + 2
-    if edit:
+        j = j + 2 # every second element starting from third element is a slotname
+    if edit: # if the message with slotlist is already sended to the mission channel just edit it
         m = await ctx.history().get(author__name = "Slotlist")
         await m.edit(content = send_message)
     else:
@@ -212,6 +234,10 @@ async def missioninfofnc(ctx, mission: int, edit):
     conn.close()
 
 def get_name(data, i):
+    """
+    If a slot has a slotted player add " - Playername" to the slotname
+    If not return nothing
+    """
     r = data[0][i]
     if r == None:
         return ""
@@ -227,6 +253,7 @@ async def slot(ctx, mission: int, slot: int):
     conn = sqlite3.connect("slotlist.db")
     cursor = conn.cursor()
 
+    # loop all slots if player is already slotted
     if already_slotted(ctx.author, mission):
         conn.commit()
         conn.close()
@@ -234,6 +261,7 @@ async def slot(ctx, mission: int, slot: int):
         await ctx.send(send_message)
         return
 
+    # check if slot is already taken
     sql = 'SELECT s{} FROM "{}"'.format(slot, mission)
     cursor.execute(sql)
     data = cursor.fetchall()
@@ -243,7 +271,7 @@ async def slot(ctx, mission: int, slot: int):
         sql = 'UPDATE "{}" SET s{} = "{}"'.format(mission, slot, ctx.author)
         cursor.execute(sql)
 
-        send_message = "{} You have been slotted for #{} at >{}<".format(ctx.author.mention, slot, mission_convert(mission))
+        send_message = "{} You now have the slot #{} at >{}<".format(ctx.author.mention, slot, mission_convert(mission))
         await ctx.send(send_message)
     else:
         send_message = "{} Slot is already taken. I'm sorry".format(ctx.author.mention)
@@ -251,7 +279,7 @@ async def slot(ctx, mission: int, slot: int):
 
     conn.commit()
     conn.close()
-    await addmissionchannel(ctx, mission)
+    await addmissionchannel(ctx, mission) # refresh mission information in the missions channel
 
 def already_slotted(name, mission):
     """
@@ -280,16 +308,18 @@ async def rslot(ctx, mission: int):
     conn = sqlite3.connect("slotlist.db")
     cursor = conn.cursor()
 
+    # if no slot is taken by the player you can remove it
     if not already_slotted(ctx.author, mission):
         conn.commit()
         conn.close()
-        send_message = "{} You are not slotted".format(ctx.author.mention)
+        send_message = "{} You don't have a slot".format(ctx.author.mention)
         await ctx.send(send_message)
         return
     else:
         sql = 'SELECT * FROM "{}"'.format(mission)
         cursor.execute(sql)
         data = cursor.fetchall()
+        # loop from slot 1 to max(slot) == id in data[0][0] in mission id table
         for x in range(1, data[0][0] + 1):
             if data[0][(x * 2) + 1] == str(ctx.author):
                 sql = 'UPDATE "{}" SET s{} = NULL'.format(mission, x)
@@ -298,12 +328,13 @@ async def rslot(ctx, mission: int):
                 await ctx.send(send_message)
     conn.commit()
     conn.close()
-    await addmissionchannel(ctx, mission)
+    await addmissionchannel(ctx, mission) # refresh mission information in the missions channel
 
 @bot.command(name = "aslot", help = "Assign player for a mission")
 async def aslot(ctx, player, mission: int, slot: int):
     """
     Connects to the database and slot a player for a mission if available
+    Equal to slot command but not executed by player, but someone else
     """
     conn = sqlite3.connect("slotlist.db")
     cursor = conn.cursor()
@@ -325,7 +356,7 @@ async def aslot(ctx, player, mission: int, slot: int):
             sql = 'UPDATE "{}" SET s{} = "{}"'.format(mission, slot, player)
             cursor.execute(sql)
 
-            send_message = "{} assigned {} for #{} at >{}<".format(ctx.author.mention, player.mention, slot, mission_convert(mission))
+            send_message = "{} assigned {} to slot #{} at >{}<".format(ctx.author.mention, player.mention, slot, mission_convert(mission))
             await ctx.send(send_message)
         else:
             send_message = "{} Slot is already taken. I'm sorry".format(ctx.author.mention)
@@ -338,6 +369,8 @@ async def aslot(ctx, player, mission: int, slot: int):
 async def find_target(ctx, arg):
 		"""
         Returns the player id.
+        From string to member.
+        Needed to be mentioned
         """
 		if arg in ('everyone', 'all'):
 			return discord.Object(id=0)
@@ -388,6 +421,9 @@ async def addmissionchannel(ctx, mission):
         await missioninfofnc(chan, mission, True)
 
 def name_convert(name):
+    """
+    return will be name, but compatible with discord channel name restrictions
+    """
     return name.replace(" ", "-").lower()
 
 bot.run(token)
