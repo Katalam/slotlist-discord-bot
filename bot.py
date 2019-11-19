@@ -28,6 +28,12 @@ async def addMission(ctx, mission: str):
     conn = sqlite3.connect("slotlist.db")
     cursor = conn.cursor()
 
+    c = name_convert(mission)
+    if (mission != c):
+        send_message = "{} Your mission will be renamed from >{}< to >{}<".format(ctx.author.mention, mission, c)
+        await ctx.send(send_message)
+        mission = c
+
     # Adding the new entry inside the missions table with given name and highest + 1 mission_id
     mission_id = highest_mission_id() + 1
     sql = "INSERT INTO missions (mission_id, mission_name) VALUES (?, ?)"
@@ -369,5 +375,8 @@ async def addmissionchannel(ctx, mission):
             await missioninfofnc(chan, mission, False)
             return
     await missioninfofnc(chan, mission, True)
-    
+
+def name_convert(name):
+    return name.replace(" ", "-").lower()
+
 bot.run(token)
