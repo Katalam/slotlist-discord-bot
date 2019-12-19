@@ -224,7 +224,7 @@ async def missioninfofnc(ctx, mission: int, edit):
         send_message = send_message + "{}: {}{}\n".format(i, data[0][j].split(",")[1], get_name(data, j + 1))
         j = j + 2 # every second element starting from third element is a slotname
     if edit: # if the message with slotlist is already sended to the mission channel just edit it
-        m = await ctx.history().get(author__name = "Slotlist")
+        m = await ctx.history().get(author__id = bot.user.id)
         await m.edit(content = send_message)
     else:
         await ctx.send(send_message)
